@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches:
+    tags:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Setup
+        run: chmod +x gradlew
+
+      - name: Build App
+        run: ./gradlew :app:build
+
+      - name: Build Library
+        run: ./gradlew :library:build
+
+      - name: Run Library Tests
+        run: ./gradlew :library:testDebugUnitTest
+
