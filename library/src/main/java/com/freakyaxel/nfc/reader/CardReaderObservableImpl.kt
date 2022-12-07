@@ -25,29 +25,31 @@ internal class CardReaderObservableImpl constructor(
         get() = _event.filterNotNull()
 
     override fun start(activity: Activity) {
-        if (adapter == null) {
-            NfcAdapter.getDefaultAdapter(activity)?.apply {
-                // NFC Supported
-                if (!isEnabled) {
-                    _event.tryEmit(CardReaderEvent.NFCDisabled)
-                    return
-                }
-                adapter = this
-            } ?: run {
-                // NFC Not Supported
-                _event.tryEmit(CardReaderEvent.NFCNotSupported)
+        adapter = NfcAdapter.getDefaultAdapter(activity)?.apply {
+            // NFC Supported
+            if (!isEnabled) {
+                _event.tryEmit(CardReaderEvent.NFCDisabled)
+                adapter = null
                 return
             }
-            _event.tryEmit(CardReaderEvent.ReadyToScan)
-        }
-        adapter?.enableReaderMode(
-            activity,
-            this,
-            NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK or
-                    NfcAdapter.FLAG_READER_NFC_A or
-                    NfcAdapter.FLAG_READER_NFC_B,
+            if (adapter == null) {
+                _event.tryEmit(CardReaderEvent.ReadyToScan)
+            }
+        } ?: run {
+            // NFC Not Supported
+            _event.tryEmit(CardReaderEvent.NFCNotSupported)
             null
-        )
+        }
+        if (adapter != null) {
+            adapter?.enableReaderMode(
+                activity,
+                this,
+                NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK or
+                        NfcAdapter.FLAG_READER_NFC_A or
+                        NfcAdapter.FLAG_READER_NFC_B,
+                null
+            )
+        }
     }
 
     override fun stop(activity: Activity) {
