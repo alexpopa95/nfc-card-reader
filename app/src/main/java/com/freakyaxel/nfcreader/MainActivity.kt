@@ -7,12 +7,15 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.freakyaxel.nfc.api.CardReaderEvent
 import com.freakyaxel.nfc.card.CardData
@@ -24,16 +27,23 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel by viewModels<MainViewModel>()
 
-    private val cardStateText = mutableStateOf("")
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val cardStateText = mutableStateOf("")
+        val settingsButtonVisible = mutableStateOf(false)
+
         lifecycleScope.launchWhenStarted {
             viewModel.cardReaderObservable.event.collect {
+                settingsButtonVisible.value = false
                 cardStateText.value = when (it) {
                     CardReaderEvent.CardLost -> "Keep it steady. Card lost!"
                     is CardReaderEvent.Error -> getErrorLabel(it.throwable)
-                    CardReaderEvent.NFCDisabled -> "NFC Disabled"
+                    CardReaderEvent.NFCDisabled -> {
+                        settingsButtonVisible.value = true
+                        "NFC Disabled"
+                    }
+
                     CardReaderEvent.NFCNotSupported -> "NFC Not Supported"
                     CardReaderEvent.ReadyToScan -> "Ready to Scan"
                     CardReaderEvent.StartReading -> "Reading card..."
@@ -43,7 +53,12 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             NFCReaderTheme {
-                CardDataScreen(data = cardStateText.value)
+                CardDataScreen(
+                    data = cardStateText.value,
+                    settingsButtonVisible = settingsButtonVisible.value
+                ) {
+                    viewModel.cardReader.openNfcSettings(this)
+                }
             }
         }
     }
@@ -82,13 +97,25 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun CardDataScreen(data: String) {
+    fun CardDataScreen(
+        data: String,
+        settingsButtonVisible: Boolean,
+        openNfcSettings: () -> Unit = {}
+    ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = data)
+            if (settingsButtonVisible) {
+                Button(
+                    onClick = openNfcSettings,
+                    modifier = Modifier.padding(top = 15.dp)
+                ) {
+                    Text("SETTINGS")
+                }
+            }
         }
     }
 
@@ -96,7 +123,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun ErrorPreview() {
         NFCReaderTheme {
-            CardDataScreen(data = getErrorLabel(Exception("Error")))
+            CardDataScreen(data = getErrorLabel(Exception("Error")), true)
         }
     }
 
@@ -111,7 +138,7 @@ class MainActivity : ComponentActivity() {
             state = CardState.ACTIVE
         )
         NFCReaderTheme {
-            CardDataScreen(data = getCardLabel(cardData))
+            CardDataScreen(data = getCardLabel(cardData), true)
         }
     }
 }
