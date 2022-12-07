@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.freakyaxel.nfc"
-version = "0.1"
+version = "0.2"
 
 android {
     namespace 'com.freakyaxel.nfc'
