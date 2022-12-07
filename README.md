@@ -7,6 +7,6 @@ repositories {
 }
 
 dependencies {
-    implementation "com.github.alexpopa95:nfc-card-reader:version"
+    implementation "com.github.alexpopa95:nfc-card-reader:0.2"
 }
 ```
